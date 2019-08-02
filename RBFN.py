@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
+from sklearn.metrics import mean_squared_error
 
 def train_test_sets_builder(df, x, y, z, var, test_size=0.3):
 
@@ -34,6 +35,8 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     
     layout = {
     'title':'inertia',
+    'yaxis':{'title':'MSE'},
+    'xaxis':{'title':'Number of clusters'}
     }
 
     fig = go.Figure(traces, layout)
@@ -57,14 +60,18 @@ class RBFN:
 
         self.cluster_centers = cluster_centers
         self.sigma = np.array([sigma] * len(cluster_centers))
+        self.bias = 0
 
     def knn_sigma_definition(self, neighbors_number):
         
         knn = NearestNeighbors(n_neighbors=neighbors_number+1)
         knn.fit(self.cluster_centers)
         distances = knn.kneighbors(self.cluster_centers)[0]
-        #self.sigma = np.sqrt((np.sum(distances**2,axis=1))/neighbors_number)
         self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2
+
+    def random_bias(self):
+
+        self.bias = np.random.uniform(0,1,1)[0]
 
     def gaussian_kernel(self, dist):
 
@@ -78,12 +85,27 @@ class RBFN:
     def fit(self, X, Y):
 
         int_mat = self.interpolation_matrix(X, self.cluster_centers)
-        self.weights = np.dot(np.linalg.pinv(int_mat), Y)
+        weights = np.dot(np.linalg.pinv(int_mat), Y)
+        weights = np.insert(weights, 0, self.bias)
+        self.weights = weights
 
     def predict(self, X):
 
         int_mat = self.interpolation_matrix(X, self.cluster_centers)
-        predictions = np.dot(int_mat, self.weights)
+        int_mat = np.insert(int_mat, 0, np.ones(int_mat.shape[0]), axis=1)
+        predictions = np.dot(int_mat, self.weights) 
         return predictions
+
+    def loss(self, X_train, X_test, y_train, y_test):
+        
+        self.fit(X_train, y_train)
+        predictions = self.predict(X_test)
+        mse = mean_squared_error(predictions, y_test)
+        return mse
+
+    def train(self, epochs, X_train, y_train, X_test, y_test, learning_rate=0.0262, wt=True, sigma=False, bias=False):
+        pass
+
+
 
 
