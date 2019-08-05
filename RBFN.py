@@ -11,7 +11,6 @@ def train_test_sets_builder(df, x, y, z, var, test_size=0.3):
 
     X = df[[x,y,z]].values
     y = df[var].values
-
     return train_test_split(X, y, test_size=0.33, random_state=42)
 
 def cluster_centers_evaluation(coordinates, max_num_clusters):
@@ -73,34 +72,35 @@ class RBFN:
 
         self.bias = np.random.uniform(0,1,1)[0]
 
-    def gaussian_kernel(self, dist):
+    def _gaussian_kernel(self, dist):
 
         return np.exp(-1*self.sigma*dist**2)
 
-    def interpolation_matrix(self, data_points, cluster_centers):
+    def _interpolation_matrix(self, data_points, cluster_centers):
 
         dist_mat = cdist(data_points, cluster_centers)
-        return self.gaussian_kernel(dist_mat)
+        return self._gaussian_kernel(dist_mat)
 
     def fit(self, X, Y):
 
-        int_mat = self.interpolation_matrix(X, self.cluster_centers)
+        int_mat = self._interpolation_matrix(X, self.cluster_centers)
         weights = np.dot(np.linalg.pinv(int_mat), Y)
         weights = np.insert(weights, 0, self.bias)
         self.weights = weights
 
-    def predict(self, X):
+    def predict(self, X, weights=None):
+        
+        weights = self.weights if weights is None else weights
 
-        int_mat = self.interpolation_matrix(X, self.cluster_centers)
+        int_mat = self._interpolation_matrix(X, self.cluster_centers)
         int_mat = np.insert(int_mat, 0, np.ones(int_mat.shape[0]), axis=1)
-        predictions = np.dot(int_mat, self.weights) 
+        predictions = np.dot(int_mat, weights) 
         return predictions
 
-    def loss(self, X_train, X_test, y_train, y_test):
+    def loss(self, X_train, X_test, y_train, y_test, weights):
         
-        self.fit(X_train, y_train)
-        predictions = self.predict(X_test)
-        mse = mean_squared_error(predictions, y_test)
+        predictions = self.predict(X_test, weights)
+        mse = mean_squared_error(predictions, y_test)/2
         return mse
 
     def train(self, epochs, X_train, y_train, X_test, y_test, learning_rate=0.0262, wt=True, sigma=False, bias=False):
