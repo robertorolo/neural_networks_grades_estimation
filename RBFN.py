@@ -6,6 +6,9 @@ from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import calinski_harabasz_score
+from sklearn.metrics import davies_bouldin_score
 
 def train_test_sets_builder(df, x, y, z, var, test_size=0.3):
 
@@ -16,10 +19,16 @@ def train_test_sets_builder(df, x, y, z, var, test_size=0.3):
 def cluster_centers_evaluation(coordinates, max_num_clusters):
         
     inertia = []
+    calisnki = []
+    silhouete = []
+    davies = []
     n_clus = np.arange(1,max_num_clusters,1)
     for n in n_clus:
         kmeans = KMeans(n_clusters=n).fit(coordinates)
         inertia.append(kmeans.inertia_)
+        calisnki.append(calinski_harabasz_score(coordinates, kmeans.labels_)) if n != 1 else calisnki.append(float('nan'))
+        silhouete.append(silhouette_score(coordinates, kmeans.labels_, metric='euclidean')) if n != 1 else silhouete.append(float('nan'))
+        davies.append(davies_bouldin_score(coordinates, kmeans.labels_)) if n != 1 else davies.append(float('nan'))
 
     traces = []
 
@@ -28,13 +37,44 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'mode':'lines',
     'x':n_clus,
     'y':inertia,
+    'name':'inertia'
+    }
+    
+    traces.append(trace)
+
+    trace = {
+    'type':'scatter',
+    'mode':'lines',
+    'x':n_clus,
+    'y':calisnki,
+    'name':'Calinski-Harabasz' 
+    }
+    
+    traces.append(trace)
+
+    trace = {
+    'type':'scatter',
+    'mode':'lines',
+    'x':n_clus,
+    'y':silhouete,
+    'name':'Silhouette Coefficient' 
+    }
+    
+    traces.append(trace)
+
+    trace = {
+    'type':'scatter',
+    'mode':'lines',
+    'x':n_clus,
+    'y':davies,
+    'name':'Davies-Bouldin' 
     }
     
     traces.append(trace)
     
     layout = {
-    'title':'inertia',
-    'yaxis':{'title':'MSE'},
+    'title':'Indexes',
+    'yaxis':{'title':''},
     'xaxis':{'title':'Number of clusters'}
     }
 
