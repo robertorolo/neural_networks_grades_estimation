@@ -10,11 +10,11 @@ from sklearn.metrics import silhouette_score
 from sklearn.metrics import calinski_harabasz_score
 from sklearn.metrics import davies_bouldin_score
 
-def train_test_sets_builder(df, x, y, z, var, test_size=0.3):
+def train_test_sets_builder(df, x, y, z, var, test_size=0.33):
 
     X = df[[x,y,z]].values
     y = df[var].values
-    return train_test_split(X, y, test_size=0.33, random_state=42)
+    return train_test_split(X, y, test_size=test_size, random_state=42)
 
 def cluster_centers_evaluation(coordinates, max_num_clusters):
         
@@ -96,6 +96,7 @@ class RBFN:
             max_dist = np.max(clusters_dist_mat)
             sigma = 1/(2*max_dist/(np.sqrt(2*len(cluster_centers))))**2
             self.sigma = np.array([sigma] * len(cluster_centers)).T
+            print('Sigma vector: {}'.format(self.sigma))
 
         self.cluster_centers = cluster_centers
         self.sigma = np.array([sigma] * len(cluster_centers))
@@ -107,10 +108,12 @@ class RBFN:
         knn.fit(self.cluster_centers)
         distances = knn.kneighbors(self.cluster_centers)[0]
         self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2
+        print('Sigma vector: {}'.format(self.sigma))
 
     def random_bias(self):
 
         self.bias = np.random.uniform(0,1,1)[0]
+        print('Random bias: {}'.format(self.bias))
 
     def _gaussian_kernel(self, dist):
 
@@ -141,10 +144,46 @@ class RBFN:
         
         predictions = self.predict(X_test, weights)
         mse = mean_squared_error(predictions, y_test)/2
-        return mse
+        return mse, predictions
 
-    def train(self, epochs, X_train, y_train, X_test, y_test, learning_rate=0.0262, wt=True, sigma=False, bias=False):
-        pass
+    def train(self, epochs, X_train, y_train, X_test, y_test, learning_rate_w=0.0262, learning_rate_c=0.0262, learning_rate_sigma=0.0262):
+
+        mses = []
+        
+        for epoch in range(epochs):
+        
+            mse, predictions = self.loss(X_train, X_test, y_train, y_test, self.weights)
+            mses.append(mse)
+            
+            delta_w = learning_rate_w * mse * predictions
+            print(delta_w.shape)
+            self.weights = self.weights + delta_w
+
+            print('Epoch: {} \n MSE: {}'.format(epoch, mse))
+
+        traces = []
+
+        trace = {
+        'type':'scatter',
+        'mode':'lines',
+        'x':range(epochs),
+        'y':mses,
+        'name':'weights'
+        }
+        
+        traces.append(trace)
+
+        layout = {
+        'title':'Training',
+        'yaxis':{'title':'MSE'},
+        'xaxis':{'title':'epoch'}
+        }
+
+        fig = go.Figure(traces, layout)
+
+        return pyo.iplot(fig)
+
+
 
 
 
