@@ -156,9 +156,15 @@ class RBFN:
         
             loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test, self.weights)
             losses.append(loss)
-            
+
             delta_w = -1 * learning_rate_w * np.dot(real_minus_predicted, self.interpolation_matrix)
             self.weights = self.weights + delta_w
+
+            '''delta_c = -1 * learning_rate_c * np.dot(real_minus_predicted, self.weights)
+            self.cluster_centers = self.cluster_centers + delta_c
+
+            delta_sigma = -1 * learning_rate_c * np.dot(real_minus_predicted, self.weights)
+            self.sigma = self.sigma + delta_sigma'''
 
             #print('Epoch: {} \n Loss: {}'.format(epoch, loss))
 
