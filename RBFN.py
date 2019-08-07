@@ -96,7 +96,7 @@ class RBFN:
             max_dist = np.max(clusters_dist_mat)
             sigma = 1/(2*max_dist/(np.sqrt(2*len(cluster_centers))))**2
             self.sigma = np.array([sigma] * len(cluster_centers)).T
-            print('Sigma vector: {}'.format(self.sigma))
+            #print('Sigma vector: {}'.format(self.sigma))
 
         self.cluster_centers = cluster_centers
         self.sigma = np.array([sigma] * len(cluster_centers))
@@ -109,7 +109,7 @@ class RBFN:
         knn.fit(self.cluster_centers)
         distances = knn.kneighbors(self.cluster_centers)[0]
         self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2
-        print('Sigma vector: {}'.format(self.sigma))
+        #print('Sigma vector: {}'.format(self.sigma))
 
     def random_bias(self):
 
