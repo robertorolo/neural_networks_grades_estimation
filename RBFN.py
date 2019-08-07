@@ -101,6 +101,7 @@ class RBFN:
         self.cluster_centers = cluster_centers
         self.sigma = np.array([sigma] * len(cluster_centers))
         self.bias = 0
+        self.interpolation_matrix = None
 
     def knn_sigma_definition(self, neighbors_number):
         
@@ -124,50 +125,50 @@ class RBFN:
         dist_mat = cdist(data_points, cluster_centers)
         return self._gaussian_kernel(dist_mat)
 
-    def fit(self, X, Y):
+    def fit(self, X, y):
 
         int_mat = self._interpolation_matrix(X, self.cluster_centers)
-        weights = np.dot(np.linalg.pinv(int_mat), Y)
+        weights = np.dot(np.linalg.pinv(int_mat), y)
         weights = np.insert(weights, 0, self.bias)
         self.weights = weights
 
     def predict(self, X, weights=None):
         
         weights = self.weights if weights is None else weights
-
         int_mat = self._interpolation_matrix(X, self.cluster_centers)
         int_mat = np.insert(int_mat, 0, np.ones(int_mat.shape[0]), axis=1)
+        self.interpolation_matrix = int_mat
         predictions = np.dot(int_mat, weights) 
         return predictions
 
     def loss(self, X_train, X_test, y_train, y_test, weights):
         
         predictions = self.predict(X_test, weights)
-        mse = mean_squared_error(predictions, y_test)/2
-        return mse, predictions
+        loss = mean_squared_error(predictions, y_test)/2
+        real_minus_predicted = predictions - y_test
+        return loss, real_minus_predicted
 
-    def train(self, epochs, X_train, y_train, X_test, y_test, learning_rate_w=0.0262, learning_rate_c=0.0262, learning_rate_sigma=0.0262):
+    def train(self, epochs, X_train, X_test, y_train, y_test, learning_rate_w=0.001, learning_rate_c=0.001, learning_rate_sigma=0.001):
 
-        mses = []
+        losses = []
         
         for epoch in range(epochs):
         
-            mse, predictions = self.loss(X_train, X_test, y_train, y_test, self.weights)
-            mses.append(mse)
+            loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test, self.weights)
+            losses.append(loss)
             
-            delta_w = learning_rate_w * mse * predictions
-            print(delta_w.shape)
+            delta_w = -1 * learning_rate_w * np.dot(real_minus_predicted, self.interpolation_matrix)
             self.weights = self.weights + delta_w
 
-            print('Epoch: {} \n MSE: {}'.format(epoch, mse))
+            #print('Epoch: {} \n Loss: {}'.format(epoch, loss))
 
         traces = []
 
         trace = {
         'type':'scatter',
         'mode':'lines',
-        'x':range(epochs),
-        'y':mses,
+        'x':[x for x in range(epochs)],
+        'y':losses,
         'name':'weights'
         }
         
@@ -175,7 +176,7 @@ class RBFN:
 
         layout = {
         'title':'Training',
-        'yaxis':{'title':'MSE'},
+        'yaxis':{'title':'Loss'},
         'xaxis':{'title':'epoch'}
         }
 
