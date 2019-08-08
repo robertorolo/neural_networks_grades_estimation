@@ -221,8 +221,8 @@ class RBFN:
         """
         
         predictions = self.predict(X_test)
-        loss = mean_squared_error(predictions, y_test)/2
-        real_minus_predicted = predictions - y_test
+        loss = sum((np.array(y_test) - np.array(predictions))**2)/2
+        real_minus_predicted = y_test - predictions
         return loss, real_minus_predicted
 
     def train(self, epochs, X_train, X_test, y_train, y_test, learning_rate_w=0.001, learning_rate_c=0.001, learning_rate_sigma=0.001):
@@ -250,7 +250,8 @@ class RBFN:
             losses.append(loss)
 
             delta_w = learning_rate_w * np.dot(real_minus_predicted, self.interpolation_matrix)
-            self.weights = self.weights - np.array(delta_w)
+            #print(delta_w)
+            self.weights = self.weights + np.array(delta_w)
 
             '''delta_c = 
             delta_sigma = '''
