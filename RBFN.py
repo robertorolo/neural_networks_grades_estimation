@@ -59,7 +59,8 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'mode':'lines',
     'x':n_clus,
     'y':inertia,
-    'name':'inertia'
+    'name':'inertia',
+    'visible': 'legendonly'
     }
     
     traces.append(trace)
@@ -69,7 +70,8 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'mode':'lines',
     'x':n_clus,
     'y':calisnki,
-    'name':'Calinski-Harabasz' 
+    'name':'Calinski-Harabasz',
+    'visible': 'legendonly' 
     }
     
     traces.append(trace)
@@ -79,7 +81,8 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'mode':'lines',
     'x':n_clus,
     'y':silhouete,
-    'name':'Silhouette Coefficient' 
+    'name':'Silhouette Coefficient',
+    'visible': 'legendonly' 
     }
     
     traces.append(trace)
@@ -89,7 +92,8 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'mode':'lines',
     'x':n_clus,
     'y':davies,
-    'name':'Davies-Bouldin' 
+    'name':'Davies-Bouldin',
+    'visible': 'legendonly' 
     }
     
     traces.append(trace)
