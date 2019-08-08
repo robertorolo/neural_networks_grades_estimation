@@ -231,14 +231,14 @@ class RBFN:
             learning_rate_sigma (float, optional): learning rate for sigma. Defaults to 0.001.
         
         Returns:
-            [type]: [description]
+            iplot: plots a epoch against loss graph and update weights
         """
 
         losses = []
         
         for epoch in range(epochs):
         
-            loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test, self.weights)
+            loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test)
             losses.append(loss)
 
             delta_w = -1 * learning_rate_w * np.dot(real_minus_predicted, self.interpolation_matrix)
