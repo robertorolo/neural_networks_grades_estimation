@@ -131,7 +131,7 @@ class RBFN:
 
             clusters_dist_mat = cdist(cluster_centers, cluster_centers)
             max_dist = np.max(clusters_dist_mat)
-            sigma = 1/(2*max_dist/(np.sqrt(2*len(cluster_centers))))**2
+            sigma = 1/(2*max_dist/(np.sqrt(2*len(cluster_centers))))**2 #equation from samsom and deutsch
             self.sigma = np.array([sigma] * len(cluster_centers)).T
             #print('Sigma vector: {}'.format(self.sigma))
 
@@ -150,7 +150,7 @@ class RBFN:
         knn = NearestNeighbors(n_neighbors=neighbors_number+1)
         knn.fit(self.cluster_centers)
         distances = knn.kneighbors(self.cluster_centers)[0]
-        self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2
+        self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2 #equation from samsom and deutsch
         #print('Sigma vector: {}'.format(self.sigma))
 
     def random_bias(self):
@@ -162,7 +162,7 @@ class RBFN:
 
     def _gaussian_kernel(self, dist):
 
-        return np.exp(-1*self.sigma*dist**2)
+        return np.exp(-1*self.sigma*dist**2) #equation from samsom and deutsch
 
     def _interpolation_matrix(self, data_points, cluster_centers):
 
@@ -170,7 +170,7 @@ class RBFN:
         return self._gaussian_kernel(dist_mat)
 
     def fit(self, X, y):
-        """Train weights for each RBF by pseudo inverse method
+        """Train weights for each RBF by pseudo inverse solution
         
         Args:
             X (array): (npoints, 3) coordinates array
@@ -241,14 +241,11 @@ class RBFN:
             loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test)
             losses.append(loss)
 
-            delta_w = -1 * learning_rate_w * np.dot(real_minus_predicted, self.interpolation_matrix)
-            self.weights = self.weights + delta_w
+            delta_w = learning_rate_w * np.dot(real_minus_predicted, self.interpolation_matrix)
+            self.weights = self.weights - np.array(delta_w)
 
-            '''delta_c = -1 * learning_rate_c * np.dot(real_minus_predicted, self.weights)
-            self.cluster_centers = self.cluster_centers + delta_c
-
-            delta_sigma = -1 * learning_rate_c * np.dot(real_minus_predicted, self.weights)
-            self.sigma = self.sigma + delta_sigma'''
+            '''delta_c = 
+            delta_sigma = '''
 
             #print('Epoch: {} \n Loss: {}'.format(epoch, loss))
 
