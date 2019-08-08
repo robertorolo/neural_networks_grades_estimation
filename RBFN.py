@@ -58,6 +58,7 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'type':'scatter',
     'mode':'lines',
     'x':n_clus,
+    #'y':(np.array(inertia)-np.array(inertia).min())/(np.array(inertia).max()-np.array(inertia).min()),
     'y':inertia,
     'name':'inertia',
     'visible': 'legendonly'
@@ -69,6 +70,7 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'type':'scatter',
     'mode':'lines',
     'x':n_clus,
+    #'y':(np.array(calisnki)-np.array(calisnki).min())/(np.array(calisnki).max()-np.array(calisnki).min()),
     'y':calisnki,
     'name':'Calinski-Harabasz',
     'visible': 'legendonly' 
@@ -80,6 +82,7 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'type':'scatter',
     'mode':'lines',
     'x':n_clus,
+    #'y':(np.array(silhouete)-np.array(silhouete).min())/(np.array(silhouete).max()-np.array(silhouete).min()),
     'y':silhouete,
     'name':'Silhouette Coefficient',
     'visible': 'legendonly' 
@@ -91,6 +94,7 @@ def cluster_centers_evaluation(coordinates, max_num_clusters):
     'type':'scatter',
     'mode':'lines',
     'x':n_clus,
+    #'y':(np.array(davies)-np.array(davies).min())/(np.array(davies).max()-np.array(davies).min()),
     'y':davies,
     'name':'Davies-Bouldin',
     'visible': 'legendonly' 
