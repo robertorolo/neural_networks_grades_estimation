@@ -225,7 +225,7 @@ class RBFN:
         real_minus_predicted = np.array(y_test) - np.array(predictions)
         return loss, real_minus_predicted
 
-    def train(self, epochs, X_train, X_test, y_train, y_test, learning_rate_w=0.001, learning_rate_c=0.001, learning_rate_sigma=0.001):
+    def train(self, epochs, X_train, X_test, y_train, y_test, neighbors_number=None, learning_rate_w=0.001, learning_rate_c=0.001, learning_rate_sigma=0.001):
         """Trains weights, centers and sigmas by gradient descent
         
         Args:
@@ -245,18 +245,37 @@ class RBFN:
         losses = []
         
         for epoch in range(epochs):
+
+            if neighbors_number is None:
         
-            loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test)
-            losses.append(loss)
+                loss, real_minus_predicted = self.loss(X_train, X_test, y_train, y_test)
+                losses.append(loss)
 
-            delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, real_minus_predicted)
+                delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, real_minus_predicted)
 
-            self.weights = self.weights + np.array(delta_w)
+                self.weights = self.weights + np.array(delta_w)
 
-            '''delta_c = 
-            delta_sigma = '''
+            else:
 
-            #print('Epoch: {} \n Loss: {}'.format(epoch, loss))
+                losses_temp = []
+
+                for idx, est_point in enumerate(X_test):
+                    est_point = np.array([est_point])
+                    knn = NearestNeighbors(n_neighbors=neighbors_number)
+                    knn.fit(X_train)
+                    distances, indices = knn.kneighbors(est_point)
+
+                    loss, real_minus_predicted = self.loss(X_train[indices[0]], est_point, y_train[indices[0]], y_test[idx])
+
+                    delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, real_minus_predicted)
+                    self.weights = self.weights + np.array(delta_w)
+
+                    losses_temp.append(loss)
+
+                losses.append(np.mean(losses_temp))
+
+                if epoch % 500 == 0:
+                    print('Epoch: {} \n Mean loss: {}'.format(epoch, np.mean(losses_temp)))
 
         traces = []
 
