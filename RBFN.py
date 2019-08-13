@@ -9,6 +9,30 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import silhouette_score
 from sklearn.metrics import calinski_harabasz_score
 from sklearn.metrics import davies_bouldin_score
+import math
+
+def _coordinates_transform(coords, range1, range2, range3, azimuth, dip, rake):
+
+    if azimuth >= 0 and azimuth <=270:
+        alpha = math.radians(90-azimuth)
+    else:
+        alpha = math.radians(450-azimuth)
+    beta = -math.radians(dip)
+    phi = math.radians(rake)
+    
+    rot_matrix = np.zeros((3,3))
+
+    rot_matrix[0,0] = math.cos(beta)*math.cos(alpha)
+    rot_matrix[0,1] = math.cos(beta)*math.sin(alpha)
+    rot_matrix[0,2] = -math.sin(beta)
+    rot_matrix[1,0] = (range1/range2)*(-math.cos(phi)*math.sin(alpha)+math.sin(phi)*math.sin(beta)*math.cos(alpha))
+    rot_matrix[1,1] = (range1/range2)*(math.cos(phi)*math.cos(alpha)+math.sin(phi)*math.sin(beta)*math.sin(alpha))
+    rot_matrix[1,2] = (range1/range2)*(math.sin(phi)*math.cos(beta))
+    rot_matrix[2,0] = (range1/range3)*(math.sin(phi)*math.sin(alpha)+math.cos(phi)*math.sin(beta)*math.cos(alpha))
+    rot_matrix[2,1] = (range1/range3)*(-math.sin(phi)*math.cos(alpha)+math.cos(phi)*math.sin(beta)*math.sin(alpha))
+    rot_matrix[2,2] = (range1/range3)*(math.cos(phi)*math.cos(beta))
+
+    return np.array([np.dot(rot_matrix, i) for i in coords])
 
 def train_test_sets_builder(df, x, y, z, var, test_size=0.33):
     """Creates train test datasets
@@ -127,7 +151,7 @@ def cluster_centers(n_clus, coordinates):
 
 class RBFN:
 
-    def __init__(self, cluster_centers, sigma=None):
+    def __init__(self, cluster_centers, sigma=None, range1=1, range2=1, range3=1, azimuth=0., dip=0., rake=0.):
         """Constructs radial basis functions network with n cluster. If sigma is not passed the same sigma will be calculated for each RBF based on maximum distance between clusters.
         
         Args:
@@ -147,6 +171,13 @@ class RBFN:
         self.sigma = np.array([sigma] * len(cluster_centers))
         self.bias = 0
         self.interpolation_matrix = None
+        self.dist_mat = None
+        self.range1 = range1
+        self.range2 = range2
+        self.range3 = range3
+        self.azimuth = azimuth
+        self.dip = dip
+        self.rake = rake
 
     def knn_sigma_definition(self, neighbors_number):
         """Calculates a different sigma value for each RBF based on k nearest neighbors.
@@ -174,7 +205,10 @@ class RBFN:
 
     def _interpolation_matrix(self, data_points, cluster_centers):
 
+        data_points = _coordinates_transform(data_points, self.range1, self.range2, self.range3, self.azimuth, self.dip, self.rake)
+        cluster_centers = _coordinates_transform(cluster_centers, self.range1, self.range2, self.range3, self.azimuth, self.dip, self.rake)
         dist_mat = cdist(data_points, cluster_centers)
+        self.dist_mat = dist_mat
         return self._gaussian_kernel(dist_mat)
 
     def fit(self, X, y):
@@ -256,8 +290,12 @@ class RBFN:
                 self.weights = self.weights - np.array(delta_w)
 
                 #training centers
+                #later
 
                 #training sigmas
+                #delta_sigma = learning_rate_sigma * np.dot(-self.interpolation_matrix.T*self.weights*self.dist_mat**2, predicted_minus_real)
+                #delta_sigma = learning_rate_sigma * -self.interpolation_matrix * predicted_minus_real * self.weights.T * np.insert(self.dist_mat, 0, np.ones(self.dist_mat.shape[0]), axis=1)**2
+                #self.sigma = self.sigma - np.array(delta_sigma)
 
             else:
 
