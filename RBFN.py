@@ -11,7 +11,7 @@ from sklearn.metrics import calinski_harabasz_score
 from sklearn.metrics import davies_bouldin_score
 import math
 
-def _coordinates_transform(coords, range1, range2, range3, azimuth, dip, rake):
+def _coordinates_transform(coords, major_med, major_min, azimuth, dip, rake):
 
     if azimuth >= 0 and azimuth <=270:
         alpha = math.radians(90-azimuth)
@@ -25,12 +25,12 @@ def _coordinates_transform(coords, range1, range2, range3, azimuth, dip, rake):
     rot_matrix[0,0] = math.cos(beta)*math.cos(alpha)
     rot_matrix[0,1] = math.cos(beta)*math.sin(alpha)
     rot_matrix[0,2] = -math.sin(beta)
-    rot_matrix[1,0] = (range1/range2)*(-math.cos(phi)*math.sin(alpha)+math.sin(phi)*math.sin(beta)*math.cos(alpha))
-    rot_matrix[1,1] = (range1/range2)*(math.cos(phi)*math.cos(alpha)+math.sin(phi)*math.sin(beta)*math.sin(alpha))
-    rot_matrix[1,2] = (range1/range2)*(math.sin(phi)*math.cos(beta))
-    rot_matrix[2,0] = (range1/range3)*(math.sin(phi)*math.sin(alpha)+math.cos(phi)*math.sin(beta)*math.cos(alpha))
-    rot_matrix[2,1] = (range1/range3)*(-math.sin(phi)*math.cos(alpha)+math.cos(phi)*math.sin(beta)*math.sin(alpha))
-    rot_matrix[2,2] = (range1/range3)*(math.cos(phi)*math.cos(beta))
+    rot_matrix[1,0] = major_med*(-math.cos(phi)*math.sin(alpha)+math.sin(phi)*math.sin(beta)*math.cos(alpha))
+    rot_matrix[1,1] = major_med*(math.cos(phi)*math.cos(alpha)+math.sin(phi)*math.sin(beta)*math.sin(alpha))
+    rot_matrix[1,2] = major_med*(math.sin(phi)*math.cos(beta))
+    rot_matrix[2,0] = major_min*(math.sin(phi)*math.sin(alpha)+math.cos(phi)*math.sin(beta)*math.cos(alpha))
+    rot_matrix[2,1] = major_min*(-math.sin(phi)*math.cos(alpha)+math.cos(phi)*math.sin(beta)*math.sin(alpha))
+    rot_matrix[2,2] = major_min*(math.cos(phi)*math.cos(beta))
 
     return np.array([np.dot(rot_matrix, i) for i in coords])
 
@@ -147,7 +147,7 @@ def cluster_centers(n_clus, coordinates):
 
 class RBFN:
 
-    def __init__(self, cluster_centers, sigma=None, range1=1, range2=1, range3=1, azimuth=0., dip=0., rake=0.):
+    def __init__(self, cluster_centers, sigma=None, major_med=1, major_min=1, azimuth=0., dip=0., rake=0.):
         """Constructs radial basis functions network with n cluster. If sigma is not passed the same sigma will be calculated for each RBF based on maximum distance between clusters.
         
         Args:
@@ -168,9 +168,8 @@ class RBFN:
         self.bias = 0
         self.interpolation_matrix = None
         self.dist_mat = None
-        self.range1 = range1
-        self.range2 = range2
-        self.range3 = range3
+        self.major_med = major_med
+        self.major_min = major_min
         self.azimuth = azimuth
         self.dip = dip
         self.rake = rake
@@ -201,8 +200,8 @@ class RBFN:
 
     def _interpolation_matrix(self, data_points, cluster_centers):
 
-        data_points = _coordinates_transform(data_points, self.range1, self.range2, self.range3, self.azimuth, self.dip, self.rake)
-        cluster_centers = _coordinates_transform(cluster_centers, self.range1, self.range2, self.range3, self.azimuth, self.dip, self.rake)
+        data_points = _coordinates_transform(data_points, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
+        cluster_centers = _coordinates_transform(cluster_centers, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
         dist_mat = cdist(data_points, cluster_centers)
         self.dist_mat = dist_mat
         return self._gaussian_kernel(dist_mat)
