@@ -147,7 +147,7 @@ def cluster_centers(n_clus, coordinates):
 
 class RBFN:
 
-    def __init__(self, cluster_centers, sigma=None, major_med=1, major_min=1, azimuth=0., dip=0., rake=0.):
+    def __init__(self, cluster_centers, sigma=None, function='gaussian', major_med=1, major_min=1, azimuth=0., dip=0., rake=0.):
         """Constructs radial basis functions network with n cluster. If sigma is not passed the same sigma will be calculated for each RBF based on maximum distance between clusters.
         
         Args:
@@ -173,6 +173,7 @@ class RBFN:
         self.azimuth = azimuth
         self.dip = dip
         self.rake = rake
+        self.function = function
 
     def knn_sigma_definition(self, neighbors_number):
         """Calculates a different sigma value for each RBF based on k nearest neighbors.
@@ -194,9 +195,11 @@ class RBFN:
         self.bias = np.random.uniform(0,1,1)[0]
         print('Random bias: {}'.format(self.bias))
 
-    def _gaussian_kernel(self, dist):
-
-        return np.exp(-1*self.sigma*dist**2) #equation from samsom and deutsch
+    def _kernel(self, dist, function):
+        if function is 'gaussian':
+            return np.exp(-1*self.sigma*dist**2) #equation from samsom and deutsch
+        if function is 'multiquadratic':
+            return np.sqrt((dist/self.sigma)**2 + 1)
 
     def _interpolation_matrix(self, data_points, cluster_centers):
 
@@ -204,7 +207,7 @@ class RBFN:
         cluster_centers = _coordinates_transform(cluster_centers, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
         dist_mat = cdist(data_points, cluster_centers)
         self.dist_mat = dist_mat
-        return self._gaussian_kernel(dist_mat)
+        return self._kernel(dist_mat, self.function)
 
     def fit(self, X, y):
         """Train weights for each RBF by pseudo inverse solution
@@ -288,9 +291,7 @@ class RBFN:
                 #later
 
                 #training sigmas
-                #delta_sigma = learning_rate_sigma * np.dot(-self.interpolation_matrix.T*self.weights*self.dist_mat**2, predicted_minus_real)
-                #delta_sigma = learning_rate_sigma * -self.interpolation_matrix * predicted_minus_real * self.weights.T * np.insert(self.dist_mat, 0, np.ones(self.dist_mat.shape[0]), axis=1)**2
-                #self.sigma = self.sigma - np.array(delta_sigma)
+                #later
 
             else:
 

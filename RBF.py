@@ -39,20 +39,24 @@ class RBF:
         self.X = None
 
     def _gauss(self, sigma, dist):
-        cte = 1/(sigma*np.sqrt(2*np.pi))
-        return cte*np.exp(-(dist**2)/(2*sigma**2))
+        #cte = 1/(sigma*np.sqrt(2*np.pi))
+        #return cte*np.exp(-(dist**2)/(2*sigma**2))
+        return np.exp(-(dist/sigma)**2)
+
+    def _multi_quadratic(self, sigma, dist):
+        return np.sqrt((dist/sigma)**2 + 1)
 
     def fit(self, X, y):
         X = _coordinates_transform(X, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
         self.X = X
         dist_mat = cdist(X, X)
-        int_mat = self._gauss(self.support, dist_mat)
+        int_mat = self._multi_quadratic(self.support, dist_mat)
         self.weights = np.dot(np.linalg.inv(int_mat), y) 
 
     def predict(self, x):
         x = _coordinates_transform(x, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
         dist_mat = cdist(self.X, x)
-        int_mat = self._gauss(self.support, dist_mat)
+        int_mat = self._multi_quadratic(self.support, dist_mat)
         return np.dot(int_mat.T, self.weights)
 
 
