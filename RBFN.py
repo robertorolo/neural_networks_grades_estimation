@@ -284,8 +284,12 @@ class RBFN:
                 losses.append(loss)
 
                 #training weights
-                delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
-                self.weights = self.weights - np.array(delta_w)
+                if self.function is 'gaussian':
+                    delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
+                    self.weights = self.weights - np.array(delta_w)
+                if self.function is 'multiquadratic':
+                    delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
+                    self.weights = self.weights + np.array(delta_w)
 
                 #training centers
                 #later
