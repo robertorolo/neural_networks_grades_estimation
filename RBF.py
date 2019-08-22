@@ -27,8 +27,9 @@ def _coordinates_transform(coords, major_med, major_min, azimuth, dip, rake):
 
 class RBF:
 
-    def __init__(self, support, major_med, major_min, azimuth, dip, rake):
+    def __init__(self, support, major_med=1, major_min=1, azimuth=0, dip=0, rake=0, function='gaussian'):
 
+        self.function = function
         self.support = support
         self.major_med = major_med
         self.major_min = major_min
@@ -38,25 +39,26 @@ class RBF:
         self.weights = None
         self.X = None
 
-    def _gauss(self, sigma, dist):
-        #cte = 1/(sigma*np.sqrt(2*np.pi))
-        #return cte*np.exp(-(dist**2)/(2*sigma**2))
-        return np.exp(-(dist/sigma)**2)
+    def _kernel(self, sigma, dist):
+        if self.function is 'gaussian':
+            #return np.exp(-1*(dist**2/(2*sigma**2)))
+            return np.exp(-1*(dist**2)*(sigma**2))
+        if self.function is 'multiquadratic':
+           #return np.sqrt((dist/2*sigma**2)**2 + 1)
+           return np.sqrt((dist*sigma)**2 + 1)
 
-    def _multi_quadratic(self, sigma, dist):
-        return np.sqrt((dist/sigma)**2 + 1)
 
     def fit(self, X, y):
         X = _coordinates_transform(X, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
         self.X = X
         dist_mat = cdist(X, X)
-        int_mat = self._multi_quadratic(self.support, dist_mat)
+        int_mat = self._kernel(self.support, dist_mat)
         self.weights = np.dot(np.linalg.inv(int_mat), y) 
 
     def predict(self, x):
         x = _coordinates_transform(x, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
         dist_mat = cdist(self.X, x)
-        int_mat = self._multi_quadratic(self.support, dist_mat)
+        int_mat = self._kernel(self.support, dist_mat)
         return np.dot(int_mat.T, self.weights)
 
 

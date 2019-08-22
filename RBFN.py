@@ -159,9 +159,8 @@ class RBFN:
 
             clusters_dist_mat = cdist(cluster_centers, cluster_centers)
             max_dist = np.max(clusters_dist_mat)
-            sigma = 1/(2*max_dist/(np.sqrt(2*len(cluster_centers))))**2 #equation from samsom and deutsch
+            sigma = max_dist/(np.sqrt(2*len(cluster_centers)))
             self.sigma = np.array([sigma] * len(cluster_centers)).T
-            #print('Sigma vector: {}'.format(self.sigma))
 
         self.cluster_centers = cluster_centers
         self.sigma = np.array([sigma] * len(cluster_centers))
@@ -185,8 +184,8 @@ class RBFN:
         knn = NearestNeighbors(n_neighbors=neighbors_number+1)
         knn.fit(self.cluster_centers)
         distances = knn.kneighbors(self.cluster_centers)[0]
-        self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2 #equation from samsom and deutsch
-        #print('Sigma vector: {}'.format(self.sigma))
+        self.sigma = np.max(distances,axis=1)/(np.sqrt(2*neighbors_number)) #check this
+        #self.sigma = 1/(2*np.max(distances,axis=1)/np.sqrt(2*neighbors_number))**2 #equation from samsom and deutsch
 
     def random_bias(self):
         """Set a random bias value between 0 and 1
@@ -197,9 +196,10 @@ class RBFN:
 
     def _kernel(self, dist, function):
         if function is 'gaussian':
-            return np.exp(-1*self.sigma*dist**2) #equation from samsom and deutsch
+            return np.exp(-1*(dist**2)/(2*self.sigma**2))
         if function is 'multiquadratic':
-            return np.sqrt((dist/self.sigma)**2 + 1)
+            #return np.sqrt(dist**2 + 1)
+            return np.sqrt((dist/2*self.sigma**2)**2 + 1)
 
     def _interpolation_matrix(self, data_points, cluster_centers):
 
@@ -284,12 +284,8 @@ class RBFN:
                 losses.append(loss)
 
                 #training weights
-                if self.function is 'gaussian':
-                    delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
-                    self.weights = self.weights - np.array(delta_w)
-                if self.function is 'multiquadratic':
-                    delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
-                    self.weights = self.weights + np.array(delta_w)
+                delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
+                self.weights = self.weights - np.array(delta_w)
 
                 #training centers
                 #later
