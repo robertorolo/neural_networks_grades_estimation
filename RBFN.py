@@ -173,6 +173,7 @@ class RBFN:
         self.dip = dip
         self.rake = rake
         self.function = function
+        self.weights = np.random.randn(len(cluster_centers)+1)
 
     def knn_sigma_definition(self, neighbors_number):
         """Calculates a different sigma value for each RBF based on k nearest neighbors.
@@ -234,12 +235,13 @@ class RBFN:
         
         weights = self.weights
         int_mat = self._interpolation_matrix(X, self.cluster_centers)
+        self.int_mat_no_zero = int_mat
         int_mat = np.insert(int_mat, 0, np.ones(int_mat.shape[0]), axis=1)
         self.interpolation_matrix = int_mat
         predictions = np.dot(int_mat, weights) 
         return predictions
 
-    def loss(self, X_train, X_test, y_train, y_test):
+    def loss(self, X_train, y_train):
         """Calculates loss function for a train test set
         
         Args:
@@ -252,12 +254,12 @@ class RBFN:
             [type]: [description]
         """
         
-        predictions = self.predict(X_test)
-        loss = sum((np.array(predictions) - np.array(y_test))**2)/2
-        predicted_minus_real = np.array(predictions) - np.array(y_test)
-        return loss, predicted_minus_real
+        predictions = self.predict(X_train)
+        loss = sum((np.array(predictions) - np.array(y_train))**2)/2
+        real_minus_predicted = np.array(y_train) - np.array(predictions)
+        return loss, real_minus_predicted
 
-    def train(self, epochs, X_train, X_test, y_train, y_test, neighbors_number=None, learning_rate_w=0.001, learning_rate_c=0.001, learning_rate_sigma=0.001):
+    def train(self, epochs, X_train, y_train, learning_rate_w=None, learning_rate_c=None, learning_rate_sigma=None):
         """Trains weights, centers and sigmas by gradient descent
         
         Args:
@@ -278,43 +280,39 @@ class RBFN:
         
         for epoch in range(epochs):
 
-            if neighbors_number is None:
-        
-                loss, predicted_minus_real = self.loss(X_train, X_test, y_train, y_test)
-                losses.append(loss)
+            loss, real_minus_predicted = self.loss(X_train, y_train)
+            losses.append(loss)
 
-                #training weights
-                delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
-                self.weights = self.weights - np.array(delta_w)
+            if epoch % 500 == 0:
+                print('Epoch: {} \n loss: {}'.format(epoch, np.mean(loss)))
 
-                #training centers
-                #later
+            #training weights
+            if learning_rate_w is not None:
+                delta_w = np.dot(real_minus_predicted, self.interpolation_matrix)
+                self.weights = self.weights - learning_rate_w * np.array(delta_w)
 
-                #training sigmas
-                #later
+            #training centers
+            #later
 
-            else:
+            #training sigmas
+            if learning_rate_sigma is not None:
+                delta_sigma = np.zeros(len(self.cluster_centers))
+                for j in range(len(self.cluster_centers)):
+                    sigma_j = self.sigma[j]
+                    cluster_center_j = [[self.cluster_centers[j][0], self.cluster_centers[j][1], self.cluster_centers[j][2]]]
+                    dist_mat_j = cdist(X_train, cluster_center_j)
+                    int_mat_j = np.exp(-1*(dist_mat_j**2)/(2*sigma_j**2))
+                    dist_sigma = (dist_mat_j**2)/(sigma_j**3)
+                    predictions_j = np.dot(int_mat_j, self.weights[j+1])
+                    real_minus_predicted_j = np.array(y_train) - np.array(predictions_j)[:,0]
+                    right = sum(self.weights[j+1] * real_minus_predicted_j)
+                    left = np.dot(int_mat_j.T, dist_sigma)
+                    delta_sigma[j] = right * left[0][0]
 
-                losses_temp = []
+                self.sigma = self.sigma - learning_rate_sigma * delta_sigma
 
-                for idx, est_point in enumerate(X_test):
-                    est_point = np.array([est_point])
-                    knn = NearestNeighbors(n_neighbors=neighbors_number)
-                    knn.fit(X_train)
-                    distances, indices = knn.kneighbors(est_point)
 
-                    loss, predicted_minus_real = self.loss(X_train[indices[0]], est_point, y_train[indices[0]], y_test[idx])
-
-                    delta_w = learning_rate_w * np.dot(self.interpolation_matrix.T, predicted_minus_real)
-                    self.weights = self.weights - np.array(delta_w)
-
-                    losses_temp.append(loss)
-
-                losses.append(np.mean(losses_temp))
-
-                if epoch % 500 == 0:
-                    print('Epoch: {} \n Mean loss: {}'.format(epoch, np.mean(losses_temp)))
-
+                   
         traces = []
 
         trace = {
