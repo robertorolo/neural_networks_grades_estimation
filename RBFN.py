@@ -161,6 +161,7 @@ class RBFN:
             max_dist = np.max(clusters_dist_mat)
             sigma = max_dist/(np.sqrt(2*len(cluster_centers)))
             self.sigma = np.array([sigma] * len(cluster_centers)).T
+            print('Sigma value set')
 
         self.cluster_centers = cluster_centers
         self.sigma = np.array([sigma] * len(cluster_centers))
@@ -174,6 +175,7 @@ class RBFN:
         self.rake = rake
         self.function = function
         self.weights = np.random.randn(len(cluster_centers)+1)
+        print('Random weights set')
 
     def knn_sigma_definition(self, neighbors_number):
         """Calculates a different sigma value for each RBF based on k nearest neighbors.
@@ -310,9 +312,7 @@ class RBFN:
                     delta_sigma[j] = right * left[0][0]
 
                 self.sigma = self.sigma - learning_rate_sigma * delta_sigma
-
-
-                   
+          
         traces = []
 
         trace = {
