@@ -261,7 +261,7 @@ class RBFN:
         real_minus_predicted = np.array(y_train) - np.array(predictions)
         return loss, real_minus_predicted
 
-    def train(self, epochs, X_train, y_train, learning_rate_w=None, learning_rate_c=None, learning_rate_sigma=None):
+    def train(self, epochs, X_train, y_train, learning_rate_w=None):
         """Trains weights, centers and sigmas by gradient descent
         
         Args:
@@ -297,21 +297,7 @@ class RBFN:
             #later
 
             #training sigmas
-            if learning_rate_sigma is not None:
-                delta_sigma = np.zeros(len(self.cluster_centers))
-                for j in range(len(self.cluster_centers)):
-                    sigma_j = self.sigma[j]
-                    cluster_center_j = [[self.cluster_centers[j][0], self.cluster_centers[j][1], self.cluster_centers[j][2]]]
-                    dist_mat_j = cdist(X_train, cluster_center_j)
-                    int_mat_j = np.exp(-1*(dist_mat_j**2)/(2*sigma_j**2))
-                    dist_sigma = (dist_mat_j**2)/(sigma_j**3)
-                    predictions_j = np.dot(int_mat_j, self.weights[j+1])
-                    real_minus_predicted_j = np.array(y_train) - np.array(predictions_j)[:,0]
-                    right = sum(self.weights[j+1] * real_minus_predicted_j)
-                    left = np.dot(int_mat_j.T, dist_sigma)
-                    delta_sigma[j] = right * left[0][0]
-
-                self.sigma = self.sigma - learning_rate_sigma * delta_sigma
+            #later
           
         traces = []
 
